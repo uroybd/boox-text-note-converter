@@ -28,7 +28,7 @@ export default class MarkdownRenderer extends BaseRenderer {
       innerContents[0] = `${indentation}- ${innerContents[0]}`
       return innerContents.join(`${indentation}  \n`)
     })
-    return processed.join('\n').replaceAll('/\ns*\n/', '\n')
+    return processed.join('\n').replace(/\n\s*\n/g, '\n') + '\n'
   }
 
   orderedListRenderer(content, level = 0) {
@@ -49,7 +49,8 @@ export default class MarkdownRenderer extends BaseRenderer {
       innerContents[0] = `${indentation}${idx + 1}. ${innerContents[0]}`
       return innerContents.join(`${indentation}  \n`)
     })
-    return processed.join('\n').replaceAll('/\ns*\n/', '\n') + '\n'
+
+    return processed.join('\n').replace(/\n\s*\n/g, '\n') + '\n'
   }
 
   async imageRenderer(content) {

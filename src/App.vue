@@ -5,11 +5,18 @@
         Boox Text Note Converter
       </VaNavbarItem>
     </template>
+    <template #right>
+      <VaNavbarItem>
+        <a href="https://github.com/uroybd/boox-text-note-converter/issues" style="color: white">
+        <VaIcon name="bug_report"></VaIcon></a>
+      </VaNavbarItem>
+    </template>
   </VaNavbar>
 
   <main class="p-3">
     <VaFileUpload v-model="noteFile" dropzone file-types="note,zip" />
-    <div class="row content-pane">
+    <div class="row content-pane" v-if="previewOutput">
+
       <div class="flex flex-col md6">
         <VaCard class="item content">
           <VaCardTitle>Preview</VaCardTitle>
@@ -25,6 +32,11 @@
 
         <VaCard class="item content">
           <VaCardTitle>Generated</VaCardTitle>
+
+<VaCardActions align="end" style="width: 100%; justify-content: flex-end;">
+        <VaButton round preset="secondary" @click.prevent="onCopy()" icon="content_copy">Copy</VaButton>
+        <VaButton @click.prevent="onDownload()" round icon="download">Download</VaButton>
+      </VaCardActions>
           <VaCardContent>
 
           <pre>{{ markdownOutput }}</pre>
@@ -95,6 +107,44 @@ watch(contentFile, (newVal) => {
 });
 
 
+const onDownload = async () => {
+  const a = document.createElement('a');
+  let url;
+  if (files.value.length === 0) {
+    return;
+  }
+  if (files.value.length === 1) {
+
+  const blob = new Blob([markdownOutput.value], { type: 'text/markdown' });
+  url = URL.createObjectURL(blob);
+  a.href = url;
+  a.download = `${noteFile.value[0].name.replace('.note', '')}.md`;
+  } else {
+    const zipWriter = new zip.ZipWriter(new zip.BlobWriter(), {
+      bufferedWrite: true,
+    });
+    
+  const mdBlob = new Blob([markdownOutput.value], { type: 'text/markdown' });
+  zipWriter.add(`${noteFile.value[0].name.replace('.note', '')}.md`, new zip.BlobReader(mdBlob));
+
+    files.value.forEach((f) => {
+      if (!f.name.endsWith(".html")) {
+      const name = f.name.split('/').pop();
+      zipWriter.add(name, new zip.BlobReader(f.content));
+      }
+    });
+    url = URL.createObjectURL(await zipWriter.close());
+    a.href = url;
+    a.download = `${noteFile.value[0].name.replace('.note', '')}.zip`;
+  }
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+
+const onCopy = () => {
+  navigator.clipboard.writeText(markdownOutput.value);
+};
 
 watch(noteFile, async (newVal) => {
   readerClient.value = new zip.ZipReader(new zip.BlobReader(newVal[0]));
